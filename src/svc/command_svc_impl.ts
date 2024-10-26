@@ -13,7 +13,7 @@ export class DefaultCommandProcessingService implements CommandProcessingService
         this.handlers = handlers;
     }
 
-    async process(command: string, ws: WebSocket): Promise<void> {
+    async process(command: string, ws: WebSocket, clientId: string): Promise<void> {
 
         console.log(`Received command: ${command}`);
         let cmd: Command = this.commandParser.parse(command)
@@ -22,16 +22,7 @@ export class DefaultCommandProcessingService implements CommandProcessingService
             .find((handler) => handler.canHandle(cmd));
 
         if (firstHandler) {
-            let result = await firstHandler.handle(cmd)
-
-            if (result) {
-                let msg: string = JSON.stringify(result)
-                console.log(`Result: ${msg}`);
-                ws.send(msg);
-            } else {
-                console.log("No results");
-            }
-
+            await firstHandler.handle(cmd, ws, clientId);
         } else {
             console.error(`Command handler not found for the command - [${command}]`);
         }

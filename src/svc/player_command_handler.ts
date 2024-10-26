@@ -1,6 +1,9 @@
+import { WebSocket } from 'ws';
 import { Command, CommandResponse } from '../command/commands.js';
 import { CommandHandler } from './command_svc.js';
-import { UserService } from './user_svc.js';
+import { Player, UserService } from './user_svc.js';
+import { Room, RoomService } from './room_svc.js';
+import { PlayerClientService } from './ws_client_svc.js';
 
 export interface UserLogin {
     name: string;
@@ -16,37 +19,62 @@ const toUserLogin = (msg: string): UserLogin => {
 export class PlayerCommandHandler implements CommandHandler {
 
     private userService: UserService;
+    private roomService: RoomService;
+    private playerClientSvc: PlayerClientService;
 
-    constructor(userService: UserService) {
-        this.userService = userService
+    constructor(userService: UserService, roomService: RoomService, playerClientSvc: PlayerClientService) {
+        this.userService = userService;
+        this.roomService = roomService;
+        this.playerClientSvc = playerClientSvc;
     }
 
     canHandle(command: Command): boolean {
         return command.type === 'reg'
     }
 
-    async handle(command: Command): Promise<CommandResponse | undefined> {
+    async handle(command: Command, ws: WebSocket, clientId: string): Promise<void> {
 
         let userLogin = toUserLogin(command.data);
 
         let foundPlayer = await this.userService.loginOrCreate(userLogin);
         let responseData: string;
         if (foundPlayer) {
-            responseData = JSON.stringify(foundPlayer);
+            this.playerClientSvc.assign(clientId, foundPlayer);
+            await this.sendRegEvent(ws, foundPlayer);
+            this.sendUpdateRoomEvent(ws);
+
         } else {
             responseData = JSON.stringify({
                 error: true,
                 errorText: "User not found or Invalid credentials",
             });
+            this.send(ws, command.type, responseData);
         }
-
-        let result: CommandResponse = {
-            type: command.type,
-            data: responseData,
-            id: command.id
-        }
-
-        return result;
     }
 
+    private async sendUpdateRoomEvent(ws: WebSocket): Promise<void> {
+        let foundSingleUserRoom: Room[] = await this.roomService.getSingleUserRooms();
+
+        this.send(ws, 'update_room', JSON.stringify(foundSingleUserRoom));
+    }
+
+    private async sendRegEvent(ws: WebSocket, player: Player): Promise<void> {
+        let responseData = JSON.stringify(player);
+
+        this.send(ws, 'reg', responseData);
+    }
+
+    private send(ws: WebSocket, eventType: string, dataValue: string, event_id: number = 0): void {
+        let msg = this.toMessage({
+            type: eventType,
+            data: dataValue,
+            id: event_id
+        });
+        console.log(`Result: ${msg}`);
+        ws.send(msg);
+    }
+
+    toMessage(commandResponse: CommandResponse): string {
+        return JSON.stringify(commandResponse);
+    }
 }
