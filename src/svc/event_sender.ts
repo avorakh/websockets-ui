@@ -2,10 +2,12 @@ import { PlayerClientService, PlayerClient } from './ws_client_svc.js';
 import { WinnerService, PlayerWinnerResult } from './winner_svc.js';
 import { Room, RoomService } from './room_svc.js';
 import { WebSocket } from 'ws';
+import { GamePlayer } from './geme_svc.js';
 
 export interface WebSocketEventSender {
     sendUpdateRoomEvent(): Promise<void>;
     sendUpdateWinnersEvent(): Promise<void>;
+    sendCreateGameEvent(players: GamePlayer[]): Promise<void>;
 }
 
 export class SimpleWebSocketEventSender implements WebSocketEventSender {
@@ -20,6 +22,7 @@ export class SimpleWebSocketEventSender implements WebSocketEventSender {
         this.winnerService = winnerService;
     }
 
+
     async sendUpdateRoomEvent(): Promise<void> {
         let foundSingleUserRoom: Room[] = await this.roomService.getSingleUserRooms();
         let updateRoomEvent: string = this.toEvent('update_room', JSON.stringify(foundSingleUserRoom));
@@ -32,6 +35,23 @@ export class SimpleWebSocketEventSender implements WebSocketEventSender {
         let updateWinnersEvent: string = this.toEvent('update_winners', JSON.stringify(result));
         let availableClient: PlayerClient[] = this.findAllOpenClients();
         availableClient.forEach(client => this.send(client.ws, client.id, updateWinnersEvent));
+    }
+
+    async sendCreateGameEvent(players: GamePlayer[]): Promise<void> {
+
+        players.forEach(player => {
+            let foundClient = this.playerClientSvc.findByPlayer(player.player);
+            if (foundClient) {
+                let eventData: string = JSON.stringify({
+                    idGame: player.idGame,
+                    idPlayer: player.playerId
+                });
+                let createGameEvent = this.toEvent("create_game", eventData);
+                this.send(foundClient.ws, foundClient.id, createGameEvent);
+            } else {
+                console.error(`Unable to send the 'start_game' event to player - [${JSON.stringify(player)}]`);
+            }
+        });
     }
 
     private send(ws: WebSocket, clientId: string, msg: string): void {
