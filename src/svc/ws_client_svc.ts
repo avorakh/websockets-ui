@@ -11,6 +11,7 @@ export interface PlayerClientService {
     add(clientId: string, websocket: WebSocket): PlayerClient;
     assign(clientId: string, player: Player): void
     find(clientId: string): PlayerClient | undefined;
+    findByPlayer(player: Player): PlayerClient | undefined;
     findAll(): PlayerClient[];
     delete(clientId: string): void;
     clearAll(): void;
@@ -24,6 +25,21 @@ export class SimplePlayerClientService implements PlayerClientService {
     findAll(): PlayerClient[] {
         return Array.from(this.clientMap.values());
     }
+
+    findByPlayer(targetPlayer: Player): PlayerClient | undefined {
+
+        let foundClient;
+
+        this.findAll().forEach(client => {
+            if (client.player && client.player.name === targetPlayer.name && client.player.index === targetPlayer.index) {
+                console.log("Found Clint")
+                foundClient =  client;
+            }
+        });
+
+        return foundClient;
+    }
+
 
     add(clientId: string, websocket: WebSocket): PlayerClient {
 
