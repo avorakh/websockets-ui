@@ -4,7 +4,7 @@ import { CommandHandler } from './command_svc.js';
 import { RoomService, Room } from './room_svc.js';
 import { PlayerClientService } from './ws_client_svc.js';
 import { WebSocketEventSender } from './event_sender.js';
-import { GameService } from './geme_svc.js';
+import { GameService, Ship } from './geme_svc.js';
 
 export class AddRoomCommandHandler implements CommandHandler {
 
@@ -50,7 +50,7 @@ export class AddUserToRoomCommandHandler implements CommandHandler {
     private roomSvc: RoomService;
     private playerClientSvc: PlayerClientService;
     private eventSender: WebSocketEventSender;
-    private gameService: GameService
+    private gameService: GameService;
 
 
     constructor(roomSvc: RoomService, playerClientSvc: PlayerClientService, eventSender: WebSocketEventSender, gameService: GameService) {
@@ -83,3 +83,31 @@ export class AddUserToRoomCommandHandler implements CommandHandler {
     }
 
 }
+
+
+export interface AddShips {
+    gameId: string,
+    indexPlayer: string
+    ships: Ship[]
+}
+
+const toAddShips = (msg: string): AddShips => {
+    let event: AddShips = JSON.parse(msg)
+    return event;
+}
+
+export class AddShipsCommandHandler implements CommandHandler {
+    private gameService: GameService;
+    constructor(gameService: GameService) {
+        this.gameService = gameService;
+    }
+
+    canHandle(command: Command): boolean {
+        return command.type === 'add_ships'
+    }
+
+    async handle(command: Command, ws: WebSocket, clientId: string): Promise<void> {
+        let addShipsEvent: AddShips = toAddShips(command.data);
+        this.gameService.addShips(addShipsEvent.gameId, addShipsEvent.indexPlayer, addShipsEvent.ships);
+    }
+} 

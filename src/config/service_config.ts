@@ -5,7 +5,7 @@ import { PlayerCommandHandler } from "../svc/player_command_handler.js";
 import { UserService, DefaultUserService } from '../svc/user_svc.js';
 import { RoomService, DefaultRoomService } from '../svc/room_svc.js';
 import { PlayerClientService, SimplePlayerClientService } from '../svc/ws_client_svc.js';
-import { AddRoomCommandHandler, AddUserToRoomCommandHandler } from '../svc/room_handler.js';
+import { AddRoomCommandHandler, AddUserToRoomCommandHandler, AddShipsCommandHandler } from '../svc/room_handler.js';
 import { WebSocketEventSender, SimpleWebSocketEventSender } from '../svc/event_sender.js';
 import { WinnerService, SimpleWinnerService } from '../svc/winner_svc.js';
 import { GameService, SimpleGameService } from '../svc/geme_svc.js';
@@ -25,8 +25,8 @@ const gameService: GameService = new SimpleGameService(eventSender);
 const playerCommandHandler: CommandHandler = new PlayerCommandHandler(userService, plClientSvc, winnerService, eventSender);
 const addRoomCommandHandler: CommandHandler = new AddRoomCommandHandler(roomService, plClientSvc, eventSender);
 const addUserToRoomCommandHandler: CommandHandler = new AddUserToRoomCommandHandler(roomService, plClientSvc, eventSender, gameService);
+const addShipsCommandHandler: CommandHandler = new AddShipsCommandHandler(gameService);
 
-
-const handlers: CommandHandler[] = [playerCommandHandler, addRoomCommandHandler, addUserToRoomCommandHandler]
+const handlers: CommandHandler[] = [playerCommandHandler, addRoomCommandHandler, addUserToRoomCommandHandler, addShipsCommandHandler]
 
 export const commandProcessingSvc: CommandProcessingService = new DefaultCommandProcessingService(cmdParser, handlers);
