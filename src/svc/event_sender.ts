@@ -8,6 +8,8 @@ export interface WebSocketEventSender {
     sendUpdateRoomEvent(): Promise<void>;
     sendUpdateWinnersEvent(): Promise<void>;
     sendCreateGameEvent(players: GamePlayer[]): Promise<void>;
+    sendStartGameEvent(players: GamePlayer[]): Promise<void>;
+    sendTurnEvent(players: GamePlayer[], playerId: string): Promise<void>;
 }
 
 export class SimpleWebSocketEventSender implements WebSocketEventSender {
@@ -21,6 +23,8 @@ export class SimpleWebSocketEventSender implements WebSocketEventSender {
         this.playerClientSvc = playerClientSvc;
         this.winnerService = winnerService;
     }
+
+
 
 
     async sendUpdateRoomEvent(): Promise<void> {
@@ -49,7 +53,40 @@ export class SimpleWebSocketEventSender implements WebSocketEventSender {
                 let createGameEvent = this.toEvent("create_game", eventData);
                 this.send(foundClient.ws, foundClient.id, createGameEvent);
             } else {
+                console.error(`Unable to send the 'create_game' event to player - [${JSON.stringify(player)}]`);
+            }
+        });
+    }
+
+
+    async sendStartGameEvent(players: GamePlayer[]): Promise<void> {
+        players.forEach(player => {
+            let foundClient = this.playerClientSvc.findByPlayer(player.player);
+            if (foundClient) {
+                let eventData: string = JSON.stringify({
+                    idGame: player.idGame,
+                    indexPlayer: player.playerId,
+                    ships: player.ships
+                });
+                let createGameEvent = this.toEvent("start_game", eventData);
+                this.send(foundClient.ws, foundClient.id, createGameEvent);
+            } else {
                 console.error(`Unable to send the 'start_game' event to player - [${JSON.stringify(player)}]`);
+            }
+        });
+    }
+
+    async sendTurnEvent(players: GamePlayer[], playerId: string): Promise<void> {
+        players.forEach(player => {
+            let foundClient = this.playerClientSvc.findByPlayer(player.player);
+            if (foundClient) {
+                let eventData: string = JSON.stringify({
+                    currentPlayer: playerId
+                });
+                let createGameEvent = this.toEvent("turn", eventData);
+                this.send(foundClient.ws, foundClient.id, createGameEvent);
+            } else {
+                console.error(`Unable to send the 'turn' event to player - [${JSON.stringify(player)}]`);
             }
         });
     }
