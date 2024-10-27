@@ -11,13 +11,19 @@ export interface PlayerClientService {
     add(clientId: string, websocket: WebSocket): PlayerClient;
     assign(clientId: string, player: Player): void
     find(clientId: string): PlayerClient | undefined;
+    findAll(): PlayerClient[];
     delete(clientId: string): void;
     clearAll(): void;
 }
 
 export class SimplePlayerClientService implements PlayerClientService {
 
+
     private clientMap = new Map<string, PlayerClient>();
+
+    findAll(): PlayerClient[] {
+        return Array.from(this.clientMap.values());
+    }
 
     add(clientId: string, websocket: WebSocket): PlayerClient {
 
@@ -43,7 +49,7 @@ export class SimplePlayerClientService implements PlayerClientService {
         }
     }
 
-    find(clientId: string): PlayerClient | undefined{
+    find(clientId: string): PlayerClient | undefined {
         return this.clientMap.get(clientId);
     }
 
