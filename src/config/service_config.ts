@@ -9,6 +9,7 @@ import { AddRoomCommandHandler, AddUserToRoomCommandHandler, AddShipsCommandHand
 import { WebSocketEventSender, SimpleWebSocketEventSender } from '../svc/event_sender.js';
 import { WinnerService, SimpleWinnerService } from '../svc/winner_svc.js';
 import { GameService, SimpleGameService } from '../svc/geme_svc.js';
+import {AttackCommandHandler} from '../svc/game_handler.js';
 
 export const plClientSvc: PlayerClientService = new SimplePlayerClientService();
 
@@ -26,7 +27,7 @@ const playerCommandHandler: CommandHandler = new PlayerCommandHandler(userServic
 const addRoomCommandHandler: CommandHandler = new AddRoomCommandHandler(roomService, plClientSvc, eventSender);
 const addUserToRoomCommandHandler: CommandHandler = new AddUserToRoomCommandHandler(roomService, plClientSvc, eventSender, gameService);
 const addShipsCommandHandler: CommandHandler = new AddShipsCommandHandler(gameService);
-
-const handlers: CommandHandler[] = [playerCommandHandler, addRoomCommandHandler, addUserToRoomCommandHandler, addShipsCommandHandler]
+const attackCommandHandler: CommandHandler = new AttackCommandHandler(gameService);
+const handlers: CommandHandler[] = [playerCommandHandler, addRoomCommandHandler, addUserToRoomCommandHandler, addShipsCommandHandler, attackCommandHandler];
 
 export const commandProcessingSvc: CommandProcessingService = new DefaultCommandProcessingService(cmdParser, handlers);

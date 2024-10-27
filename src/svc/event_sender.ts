@@ -2,7 +2,7 @@ import { PlayerClientService, PlayerClient } from './ws_client_svc.js';
 import { WinnerService, PlayerWinnerResult } from './winner_svc.js';
 import { Room, RoomService } from './room_svc.js';
 import { WebSocket } from 'ws';
-import { GamePlayer } from './geme_svc.js';
+import { GamePlayer, AttackResults } from './geme_svc.js';
 
 export interface WebSocketEventSender {
     sendUpdateRoomEvent(): Promise<void>;
@@ -10,6 +10,7 @@ export interface WebSocketEventSender {
     sendCreateGameEvent(players: GamePlayer[]): Promise<void>;
     sendStartGameEvent(players: GamePlayer[]): Promise<void>;
     sendTurnEvent(players: GamePlayer[], playerId: string): Promise<void>;
+    sendAttackEvent(players: GamePlayer[], result: AttackResults): Promise<void>;
 }
 
 export class SimpleWebSocketEventSender implements WebSocketEventSender {
@@ -23,7 +24,6 @@ export class SimpleWebSocketEventSender implements WebSocketEventSender {
         this.playerClientSvc = playerClientSvc;
         this.winnerService = winnerService;
     }
-
 
 
 
@@ -90,6 +90,21 @@ export class SimpleWebSocketEventSender implements WebSocketEventSender {
             }
         });
     }
+
+    async sendAttackEvent(players: GamePlayer[], result: AttackResults): Promise<void> {
+        players.forEach(player => {
+            let foundClient = this.playerClientSvc.findByPlayer(player.player);
+            if (foundClient) {
+                let eventData: string = JSON.stringify(result);
+                let createGameEvent = this.toEvent("attack", eventData);
+                this.send(foundClient.ws, foundClient.id, createGameEvent);
+            } else {
+                console.error(`Unable to send the 'attack' event to player - [${JSON.stringify(player)}]`);
+            }
+        });
+    }
+
+
 
     private send(ws: WebSocket, clientId: string, msg: string): void {
 
