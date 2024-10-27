@@ -9,7 +9,7 @@ import { AddRoomCommandHandler, AddUserToRoomCommandHandler, AddShipsCommandHand
 import { WebSocketEventSender, SimpleWebSocketEventSender } from '../svc/event_sender.js';
 import { WinnerService, SimpleWinnerService } from '../svc/winner_svc.js';
 import { GameService, SimpleGameService } from '../svc/geme_svc.js';
-import {AttackCommandHandler} from '../svc/game_handler.js';
+import { AttackCommandHandler, RandomAttackCommandHandler } from '../svc/game_handler.js';
 
 export const plClientSvc: PlayerClientService = new SimplePlayerClientService();
 
@@ -21,13 +21,15 @@ const winnerService: WinnerService = new SimpleWinnerService()
 
 const eventSender: WebSocketEventSender = new SimpleWebSocketEventSender(roomService, plClientSvc, winnerService)
 
-const gameService: GameService = new SimpleGameService(eventSender);
+const gameService: GameService = new SimpleGameService(eventSender, winnerService);
 
 const playerCommandHandler: CommandHandler = new PlayerCommandHandler(userService, plClientSvc, winnerService, eventSender);
 const addRoomCommandHandler: CommandHandler = new AddRoomCommandHandler(roomService, plClientSvc, eventSender);
 const addUserToRoomCommandHandler: CommandHandler = new AddUserToRoomCommandHandler(roomService, plClientSvc, eventSender, gameService);
 const addShipsCommandHandler: CommandHandler = new AddShipsCommandHandler(gameService);
 const attackCommandHandler: CommandHandler = new AttackCommandHandler(gameService);
-const handlers: CommandHandler[] = [playerCommandHandler, addRoomCommandHandler, addUserToRoomCommandHandler, addShipsCommandHandler, attackCommandHandler];
+const randomAttackCommandHandler: CommandHandler = new RandomAttackCommandHandler(gameService)
+
+const handlers: CommandHandler[] = [playerCommandHandler, addRoomCommandHandler, addUserToRoomCommandHandler, addShipsCommandHandler, attackCommandHandler, randomAttackCommandHandler];
 
 export const commandProcessingSvc: CommandProcessingService = new DefaultCommandProcessingService(cmdParser, handlers);

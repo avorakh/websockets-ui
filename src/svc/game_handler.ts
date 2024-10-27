@@ -31,4 +31,30 @@ export class AttackCommandHandler implements CommandHandler {
         let attackEvent: Attack = toAttack(command.data);
         this.gameService.attack(attackEvent.gameId, attackEvent.indexPlayer, { x: attackEvent.x, y: attackEvent.y });
     }
+}
+
+export interface RandomAttack {
+    gameId: string,
+    indexPlayer: string
+}
+
+const toRandomAttack = (msg: string): RandomAttack => {
+    let event: Attack = JSON.parse(msg)
+    return event;
+}
+
+export class RandomAttackCommandHandler implements CommandHandler {
+    private gameService: GameService;
+    constructor(gameService: GameService) {
+        this.gameService = gameService;
+    }
+
+    canHandle(command: Command): boolean {
+        return command.type === 'randomAttack'
+    }
+
+    async handle(command: Command, ws: WebSocket, clientId: string): Promise<void> {
+        let attackEvent: RandomAttack = toRandomAttack(command.data);
+        this.gameService.randomAttack(attackEvent.gameId, attackEvent.indexPlayer);
+    }
 } 

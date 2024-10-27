@@ -6,6 +6,7 @@ export interface PlayerWinnerResult {
 export interface WinnerService {
     getAllWinners(): Promise<PlayerWinnerResult[]>;
     addPlayer(name: string): Promise<void>;
+    addWin(name: string): Promise<void>;
 }
 
 export class SimpleWinnerService implements WinnerService {
@@ -24,4 +25,11 @@ export class SimpleWinnerService implements WinnerService {
     async addPlayer(name: string): Promise<void> {
         this.winnerMap.set(name, 0);
     }
+
+    async addWin(name: string): Promise<void> {
+        let fountCount = this.winnerMap.get(name);
+
+        this.winnerMap.set(name, (fountCount ? fountCount : 0) + 1);
+    }
+
 }

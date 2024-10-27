@@ -9,6 +9,7 @@ export interface WebSocketEventSender {
     sendUpdateWinnersEvent(): Promise<void>;
     sendCreateGameEvent(players: GamePlayer[]): Promise<void>;
     sendStartGameEvent(players: GamePlayer[]): Promise<void>;
+    sendFinishGameEvent(players: GamePlayer[], playerId: string): Promise<void>;
     sendTurnEvent(players: GamePlayer[], playerId: string): Promise<void>;
     sendAttackEvent(players: GamePlayer[], result: AttackResults): Promise<void>;
 }
@@ -24,6 +25,7 @@ export class SimpleWebSocketEventSender implements WebSocketEventSender {
         this.playerClientSvc = playerClientSvc;
         this.winnerService = winnerService;
     }
+
 
 
 
@@ -100,6 +102,21 @@ export class SimpleWebSocketEventSender implements WebSocketEventSender {
                 this.send(foundClient.ws, foundClient.id, createGameEvent);
             } else {
                 console.error(`Unable to send the 'attack' event to player - [${JSON.stringify(player)}]`);
+            }
+        });
+    }
+
+    async sendFinishGameEvent(players: GamePlayer[], playerId: string): Promise<void> {
+        players.forEach(player => {
+            let foundClient = this.playerClientSvc.findByPlayer(player.player);
+            if (foundClient) {
+                let eventData: string = JSON.stringify({
+                    winPlayer: playerId
+                });
+                let createGameEvent = this.toEvent("finish", eventData);
+                this.send(foundClient.ws, foundClient.id, createGameEvent);
+            } else {
+                console.error(`Unable to send the 'finish' event to player - [${JSON.stringify(player)}]`);
             }
         });
     }
