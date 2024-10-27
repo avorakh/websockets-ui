@@ -2,8 +2,9 @@ import { WebSocket } from 'ws';
 import { Command, CommandResponse } from '../command/commands.js';
 import { CommandHandler } from './command_svc.js';
 import { Player, UserService } from './user_svc.js';
-import { Room, RoomService } from './room_svc.js';
 import { PlayerClientService } from './ws_client_svc.js';
+import { WinnerService } from './winner_svc.js';
+import { WebSocketEventSender } from './event_sender.js';
 
 export interface UserLogin {
     name: string;
@@ -19,13 +20,16 @@ const toUserLogin = (msg: string): UserLogin => {
 export class PlayerCommandHandler implements CommandHandler {
 
     private userService: UserService;
-    private roomService: RoomService;
     private playerClientSvc: PlayerClientService;
+    private winnerService: WinnerService;
+    private eventSender: WebSocketEventSender;
 
-    constructor(userService: UserService, roomService: RoomService, playerClientSvc: PlayerClientService) {
+
+    constructor(userService: UserService, playerClientSvc: PlayerClientService, winnerService: WinnerService, eventSender: WebSocketEventSender) {
         this.userService = userService;
-        this.roomService = roomService;
         this.playerClientSvc = playerClientSvc;
+        this.winnerService = winnerService;
+        this.eventSender = eventSender;
     }
 
     canHandle(command: Command): boolean {
@@ -41,8 +45,9 @@ export class PlayerCommandHandler implements CommandHandler {
         if (foundPlayer) {
             this.playerClientSvc.assign(clientId, foundPlayer);
             await this.sendRegEvent(ws, foundPlayer);
-            this.sendUpdateRoomEvent(ws);
-
+            await this.winnerService.addPlayer(foundPlayer.name);
+            this.eventSender.sendUpdateRoomEvent();
+            this.eventSender.sendUpdateWinnersEvent();
         } else {
             responseData = JSON.stringify({
                 error: true,
@@ -50,12 +55,6 @@ export class PlayerCommandHandler implements CommandHandler {
             });
             this.send(ws, command.type, responseData);
         }
-    }
-
-    private async sendUpdateRoomEvent(ws: WebSocket): Promise<void> {
-        let foundSingleUserRoom: Room[] = await this.roomService.getSingleUserRooms();
-
-        this.send(ws, 'update_room', JSON.stringify(foundSingleUserRoom));
     }
 
     private async sendRegEvent(ws: WebSocket, player: Player): Promise<void> {
